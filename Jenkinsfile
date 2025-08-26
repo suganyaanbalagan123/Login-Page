@@ -5,6 +5,7 @@ pipeline {
         REGISTRY       = "https://index.docker.io/v1/"
         DOCKERHUB_USER = "suganyamadhan1996"
         IMAGE_NAME     = "login-page"
+        DEPLOY_SERVER  = "13.201.20.164"   // Remote EC2 IP
     }
 
     stages {
@@ -18,7 +19,6 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    // Build with build number as a tag
                     dockerImage = docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:${env.BUILD_NUMBER}")
                 }
             }
@@ -28,7 +28,6 @@ pipeline {
             steps {
                 script {
                     docker.withRegistry("${REGISTRY}", '23fd98ca-52b9-4c55-912e-7a95d647e790') {
-                        // Push both the build number and 'latest'
                         dockerImage.push()
                         dockerImage.push("latest")
                     }
@@ -36,12 +35,18 @@ pipeline {
             }
         }
 
-        stage('Deploy Container') {
+        stage('Deploy to Remote EC2') {
             steps {
                 script {
-                    // Stop and remove old container if exists, then run new one
-                    sh "docker rm -f myapp || true"
-                    sh "docker run -d -p 8081:80 --name myapp ${DOCKERHUB_USER}/${IMAGE_NAME}:latest"
+                    sshagent (credentials: ['ec2-ssh-key']) {  // Jenkins Credentials ID for your EC2 PEM
+                        sh """
+                        ssh -o StrictHostKeyChecking=no ubuntu@${DEPLOY_SERVER} '
+                            sudo docker pull ${DOCKERHUB_USER}/${IMAGE_NAME}:latest &&
+                            sudo docker rm -f myapp || true &&
+                            sudo docker run -d -p 8081:80 --name myapp ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
+                        '
+                        """
+                    }
                 }
             }
         }
