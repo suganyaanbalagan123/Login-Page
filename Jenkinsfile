@@ -1,11 +1,10 @@
-
 pipeline {
     agent any
 
     environment {
-        REGISTRY = "docker.io"
-        DOCKERHUB_USER = "suganyamadhan1996"
-        IMAGE_NAME = "login-page"
+        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred') // Jenkins credentials ID
+        IMAGE_NAME = "suganyamadhan1996/login-page"
+        IMAGE_TAG = "latest"
     }
 
     stages {
@@ -19,7 +18,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    dockerImage = docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:${env.BUILD_NUMBER}")
+                    sh "docker build -t $IMAGE_NAME:$IMAGE_TAG ."
                 }
             }
         }
@@ -27,10 +26,10 @@ pipeline {
         stage('Push to DockerHub') {
             steps {
                 script {
-                    docker.withRegistry("https://${REGISTRY}", 'dockerhub-cred') {
-                        dockerImage.push()
-                        dockerImage.push("latest")
-                    }
+                    sh """
+                        echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
+                        docker push $IMAGE_NAME:$IMAGE_TAG
+                    """
                 }
             }
         }
@@ -38,22 +37,22 @@ pipeline {
         stage('Deploy Container') {
             steps {
                 script {
-                    // Remove old container if exists
-                    sh "docker rm -f login-page || true"
-
-                    // Run latest image
-                    sh "docker run -d -p 8081:8080 --name login-page ${DOCKERHUB_USER}/${IMAGE_NAME}:latest"
+                    sh """
+                        docker stop login-page || true
+                        docker rm login-page || true
+                        docker run -d --name login-page -p 8080:80 $IMAGE_NAME:$IMAGE_TAG
+                    """
                 }
             }
         }
     }
 
     post {
-        success {
-            echo "✅ Build, Push & Deploy Completed"
-        }
         failure {
             echo "❌ Pipeline Failed"
+        }
+        success {
+            echo "✅ Pipeline Succeeded"
         }
     }
 }
