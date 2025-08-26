@@ -41,9 +41,12 @@ pipeline {
                     sshagent (credentials: ['ec2-ssh-key']) {  // Jenkins Credentials ID for your EC2 PEM
                         sh """
                         ssh -o StrictHostKeyChecking=no ubuntu@${DEPLOY_SERVER} '
+                            echo "🚀 Deploying new container..." &&
                             sudo docker pull ${DOCKERHUB_USER}/${IMAGE_NAME}:latest &&
                             sudo docker rm -f myapp || true &&
-                            sudo docker run -d -p 8081:80 --name myapp ${DOCKERHUB_USER}/${IMAGE_NAME}:latest
+                            sudo docker run -d -p 8081:80 --name myapp ${DOCKERHUB_USER}/${IMAGE_NAME}:latest &&
+                            echo "🧹 Cleaning old Docker images..." &&
+                            sudo docker image prune -af
                         '
                         """
                     }
@@ -54,13 +57,13 @@ pipeline {
 
     post {
         success {
-            echo "✅ Build, Push & Deploy Completed"
+            echo "✅ Build, Push & Deploy Completed Successfully"
         }
         failure {
             echo "❌ Pipeline Failed"
         }
         always {
-            cleanWs()  // cleanup workspace after build
+            cleanWs()  // cleanup Jenkins workspace after build
         }
     }
 }
