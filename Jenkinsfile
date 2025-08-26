@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('dockerhub-cred') // Jenkins credentials ID
-        IMAGE_NAME = "suganyamadhan1996/login-page"
-        IMAGE_TAG = "latest"
+        REGISTRY = "docker.io"
+        DOCKERHUB_USER = "suganyamadhan1996"
+        IMAGE_NAME = "login-page"
     }
 
     stages {
@@ -18,7 +18,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
-                    sh "docker build -t $IMAGE_NAME:$IMAGE_TAG ."
+                    dockerImage = docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:${env.BUILD_NUMBER}")
                 }
             }
         }
@@ -26,10 +26,10 @@ pipeline {
         stage('Push to DockerHub') {
             steps {
                 script {
-                    sh """
-                        echo $DOCKERHUB_CREDENTIALS_PSW | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin
-                        docker push $IMAGE_NAME:$IMAGE_TAG
-                    """
+                    docker.withRegistry("https://${REGISTRY}", '23fd98ca-52b9-4c55-912e-7a95d647e790') {
+                        dockerImage.push()
+                        dockerImage.push("latest")
+                    }
                 }
             }
         }
@@ -37,22 +37,19 @@ pipeline {
         stage('Deploy Container') {
             steps {
                 script {
-                    sh """
-                        docker stop login-page || true
-                        docker rm login-page || true
-                        docker run -d --name login-page -p 8080:80 $IMAGE_NAME:$IMAGE_TAG
-                    """
+                    sh "docker rm -f myapp || true"
+                    sh "docker run -d -p 8081:80 --name myapp ${DOCKERHUB_USER}/${IMAGE_NAME}:latest"
                 }
             }
         }
     }
 
     post {
+        success {
+            echo "✅ Build, Push & Deploy Completed"
+        }
         failure {
             echo "❌ Pipeline Failed"
-        }
-        success {
-            echo "✅ Pipeline Succeeded"
         }
     }
 }
