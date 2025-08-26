@@ -7,4 +7,4 @@ COPY . /usr/share/nginx/html
 # Expose port 80
 EXPOSE 80
 
-# Nginx automatically starts with the base image
+# Nginx automatically starts with the base imageee
