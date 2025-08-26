@@ -5,7 +5,7 @@ pipeline {
         REGISTRY       = "https://index.docker.io/v1/"
         DOCKERHUB_USER = "suganyamadhan1996"
         IMAGE_NAME     = "login-page"
-        DEPLOY_SERVER  = "13.201.20.164"   // Remote EC2 IP
+        DEPLOY_SERVER  = "13.201.20.164"   // Remote EC2 IPp
     }
 
     stages {
