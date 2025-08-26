@@ -1,6 +1,6 @@
 pipeline {
     agent any
-
+  
     environment {
         REGISTRY       = "https://index.docker.io/v1/"
         DOCKERHUB_USER = "suganyamadhan1996"
