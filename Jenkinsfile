@@ -38,7 +38,7 @@ pipeline {
         stage('Deploy to Remote EC2') {
             steps {
                 script {
-                    sshagent (credentials: ['ec2-ssh-key']) {  // Jenkins Credentials ID for your EC2 PEM
+                    sshagent (credentials: ['ec2-ssh-key']) {  // Jenkins Credentials ID for your EC2 PEM  yes
                         sh """
                         ssh -o StrictHostKeyChecking=no ubuntu@${DEPLOY_SERVER} '
                             echo "🚀 Deploying new container..." &&
