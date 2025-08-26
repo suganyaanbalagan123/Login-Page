@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY = "docker.io"
+        REGISTRY       = "https://index.docker.io/v1/"
         DOCKERHUB_USER = "suganyamadhan1996"
-        IMAGE_NAME = "login-page"
+        IMAGE_NAME     = "login-page"
     }
 
     stages {
@@ -18,6 +18,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 script {
+                    // Build with build number as a tag
                     dockerImage = docker.build("${DOCKERHUB_USER}/${IMAGE_NAME}:${env.BUILD_NUMBER}")
                 }
             }
@@ -26,7 +27,8 @@ pipeline {
         stage('Push to DockerHub') {
             steps {
                 script {
-                    docker.withRegistry("https://${REGISTRY}", '23fd98ca-52b9-4c55-912e-7a95d647e790') {
+                    docker.withRegistry("${REGISTRY}", '23fd98ca-52b9-4c55-912e-7a95d647e790') {
+                        // Push both the build number and 'latest'
                         dockerImage.push()
                         dockerImage.push("latest")
                     }
@@ -37,6 +39,7 @@ pipeline {
         stage('Deploy Container') {
             steps {
                 script {
+                    // Stop and remove old container if exists, then run new one
                     sh "docker rm -f myapp || true"
                     sh "docker run -d -p 8081:80 --name myapp ${DOCKERHUB_USER}/${IMAGE_NAME}:latest"
                 }
