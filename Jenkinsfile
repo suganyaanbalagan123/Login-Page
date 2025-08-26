@@ -45,8 +45,11 @@ pipeline {
                             sudo docker pull ${DOCKERHUB_USER}/${IMAGE_NAME}:latest &&
                             sudo docker rm -f myapp || true &&
                             sudo docker run -d -p 8081:80 --name myapp ${DOCKERHUB_USER}/${IMAGE_NAME}:latest &&
-                            echo "🧹 Cleaning old Docker images..." &&
-                            sudo docker image prune -af
+
+                            echo "🧹 Cleaning old Docker resources..." &&
+                            sudo docker container prune -f &&
+                            sudo docker image prune -af &&
+                            sudo docker volume prune -f
                         '
                         """
                     }
